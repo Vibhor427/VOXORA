@@ -373,3 +373,51 @@ button, select, input { touch-action: manipulation; }
     color: #d98b80;
     opacity: 0.9;
 }
+
+/* VOXORA interaction refinements */
+.history-entry { width: 100%; }
+.history-delete-confirmation {
+  display: flex; flex-direction: column; gap: 9px; margin: 4px 3px 8px;
+  padding: 11px; border: 1px solid var(--border); border-radius: 11px;
+  background: var(--surface); color: var(--text); font-size: 11px;
+  animation: fadeUp .16s ease both;
+}
+.history-delete-actions { display: flex; justify-content: flex-end; gap: 7px; }
+.history-delete-actions button {
+  padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px;
+  background: transparent; color: var(--muted-strong); font-size: 11px;
+}
+.history-delete-actions .history-delete-confirm {
+  border-color: #c86b62; background: #c86b62; color: white;
+}
+.history-item { user-select: none; -webkit-user-select: none; touch-action: pan-y; }
+.name-setup-overlay {
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;
+  padding: 20px; background: rgba(25,20,22,.52); backdrop-filter: blur(7px);
+  animation: fadeUp .2s ease both;
+}
+.name-setup-card {
+  width: min(390px,100%); display: flex; flex-direction: column; align-items: center;
+  gap: 13px; padding: 30px 25px; border: 1px solid var(--border);
+  border-radius: 22px; background: var(--surface); color: var(--text);
+  box-shadow: var(--shadow); text-align: center;
+}
+.name-setup-mark {
+  width: 52px; height: 52px; display: grid; place-items: center;
+  border-radius: 17px; color: white; font-size: 27px;
+  background: linear-gradient(145deg,#e7a092,#bf655b);
+}
+.name-setup-card h2 { margin: 2px 0 0; font: 800 22px "Manrope",sans-serif; }
+.name-setup-card p { margin: 0 0 4px; color: var(--muted); font-size: 13px; }
+.name-setup-card input {
+  width: 100%; padding: 12px 13px; border: 1px solid var(--border);
+  border-radius: 11px; outline: none; background: var(--bg); color: var(--text); font: inherit;
+}
+.name-setup-card input:focus { border-color: var(--accent); }
+.name-setup-card button {
+  width: 100%; padding: 12px; border: 0; border-radius: 11px;
+  background: linear-gradient(145deg,#e39a8c,#bd6258); color: white; font-weight: 700;
+}
+@media (prefers-reduced-motion: reduce) {
+  .history-delete-confirmation, .name-setup-overlay { animation: none; }
+}
