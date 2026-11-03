@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Voxora is a thoughtful AI chat space for questions, ideas, and learning.">
+  <meta name="theme-color" content="#fff7f3">
+  <meta name="color-scheme" content="light dark">
+  <title>Voxora — Your AI companion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="light">
+  <div class="app-container">
+    <aside class="sidebar" id="sidebar" aria-label="Conversation sidebar">
+      <div class="sidebar-header">
+        <a class="brand" href="#" aria-label="Voxora home">
+          <span class="brand-icon" aria-hidden="true">✳</span>
+          <span>voxora</span>
+        </a>
+        <p class="brand-byline">by Vibhor Shrivastava</p>
+        <button class="icon-btn close-sidebar" id="close-sidebar" aria-label="Close sidebar">×</button>
+      </div>
+
+      <button class="new-chat-btn" id="new-chat">
+        <span aria-hidden="true">＋</span> New conversation
+      </button>
+
+      <div class="history-heading">RECENT CONVERSATIONS</div>
+      <div id="history" class="history-list"></div>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-note">
+          <span class="note-sparkle">✦</span>
+          <span>A thoughtful space for curious minds.</span>
+        </div>
+        <div class="sidebar-footer">
+          <div class="profile-avatar">V</div>
+          <div class="profile-info">
+            <strong>Vibhor</strong>
+            <span>Personal workspace</span>
+          </div>
+          <span class="footer-status" title="Ready"></span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn menu-btn" id="menu-toggle" aria-label="Open sidebar">☰</button>
+          <a class="mobile-brand" href="#" aria-label="Voxora home">voxora<span>✳</span></a>
+          <div class="page-context">
+            <span class="context-dot"></span>
+            <span>Your AI space</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="icon-btn theme-toggle" id="theme-toggle" title="Switch light/dark mode" aria-label="Switch light or dark mode">☾</button>
+          <button class="settings-trigger" id="settings-toggle" aria-expanded="false" aria-controls="settings-panel">
+            <span aria-hidden="true">⚙</span><span class="settings-trigger-label">Preferences</span>
+          </button>
+        </div>
+
+        <section class="settings-panel" id="settings-panel" hidden aria-label="Preferences">
+          <div class="settings-panel-heading">
+            <div>
+              <strong>Make it yours</strong>
+              <span>Appearance and voice</span>
+            </div>
+            <button class="icon-btn settings-close" id="settings-close" aria-label="Close preferences">×</button>
+          </div>
+          <label class="setting-row">
+            <span><strong>Appearance</strong><small>Choose your preferred theme</small></span>
+            <select id="theme-select">
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+          <div class="setting-divider"></div>
+          <label class="setting-row setting-column">
+            <span><strong>Read answers aloud</strong><small>Automatically speak each new answer</small></span>
+            <input type="checkbox" id="auto-speak" class="switch-input" checked>
+          </label>
+          <label class="setting-row setting-column">
+            <span><strong>Speaking voice</strong><small>Available voices depend on your browser and device</small></span>
+            <select id="voice-select" class="wide-select">
+              <option value="">Loading voices…</option>
+            </select>
+          </label>
+          <label class="setting-row setting-column">
+            <span class="range-heading"><strong>Speaking speed</strong><output id="rate-value">0.95×</output></span>
+            <input type="range" id="speech-rate" min="0.75" max="1.2" step="0.05" value="0.95">
+          </label>
+          <p class="settings-footnote" id="voice-note">Natural-sounding voices vary by operating system and browser.</p>
+        </section>
+      </header>
+
+      <section class="chat-area">
+        <div id="response" class="response-area" aria-live="polite">
+          <div class="welcome-screen" id="welcome-screen">
+            <div class="welcome-orbit" aria-hidden="true">
+              <span class="welcome-icon">✳</span>
+              <span class="orbit-dot orbit-dot-one"></span>
+              <span class="orbit-dot orbit-dot-two"></span>
+            </div>
+            <div class="welcome-eyebrow"><span></span> A LITTLE SPACE FOR BIG IDEAS</div>
+            <h1>Where would you<br>like to <em>begin?</em></h1>
+            <p class="welcome-description">Questions, plans, wild ideas — bring them all.<br>Let's make sense of something together.</p>
+
+            <div class="suggestion-grid">
+              <button class="suggestion-card" data-prompt="Explain something fascinating about space in a clear, engaging way.">
+                <span class="suggestion-icon coral">✧</span>
+                <strong>Explore the unknown</strong>
+                <small>Space, science & big questions</small>
+                <span class="card-arrow">↗</span>
+              </button>
+              <button class="suggestion-card" data-prompt="Teach me one genuinely useful or surprising thing today.">
+                <span class="suggestion-icon amber">⌁</span>
+                <strong>Learn something new</strong>
+                <small>A fresh idea worth knowing</small>
+                <span class="card-arrow">↗</span>
+              </button>
+              <button class="suggestion-card" data-prompt="Help me brainstorm a few original ideas for a creative project.">
+                <span class="suggestion-icon lilac">✎</span>
+                <strong>Think creatively</strong>
+                <small>Turn a blank page into ideas</small>
+                <span class="card-arrow">↗</span>
+              </button>
+              <button class="suggestion-card" data-prompt="Tell me a fascinating science fact and explain why it is true.">
+                <span class="suggestion-icon green">◈</span>
+                <strong>Follow your curiosity</strong>
+                <small>Understand how things work</small>
+                <span class="card-arrow">↗</span>
+              </button>
+            </div>
+            <div class="welcome-signoff"><span>✦</span> No perfect prompts needed. Just start.</div>
+          </div>
+        </div>
+
+        <div class="composer-wrapper">
+          <div class="composer" id="composer">
+            <textarea id="question" placeholder="Ask Voxora anything…" rows="1" aria-label="Write your message"></textarea>
+            <div class="composer-bottom">
+              <div class="composer-tools">
+                <button class="tool-btn" id="voice-button" aria-label="Start voice input" title="Speak your message">
+                  <span id="mic-icon">♩</span>
+                </button>
+                <span class="composer-hint">Enter to send <span>·</span> Shift + Enter for a new line</span>
+              </div>
+              <button id="submit-button" class="send-btn" aria-label="Send message" title="Send message"><span>↑</span></button>
+            </div>
+          </div>
+          <div class="disclaimer">Voxora can make mistakes. Check important information.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <script src="scripts.js"></script>
+</body>
+</html>
