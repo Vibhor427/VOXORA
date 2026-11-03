@@ -555,7 +555,7 @@ const STORAGE_KEY = "smart_ai_conversations_v2"; // Keeps your existing saved ch
   function getLocalAnswer(question) {
     const q = String(question || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
     const answers = [
-      [/^(who am i|what is my name|do you know my name)\\b/, profileName ? `You are ${profileName}.` : "I do not know your name yet. Click your profile name in the sidebar to add it."],
+      [/^(who am i|what is my name|do you know my name)\b/, profileName ? `You are ${profileName}.` : "I do not know your name yet. Click your profile name in the sidebar to add it."],
       [/^(who made you|who created you|who is your creator|who built you)\b/, "I was created for the VOXORA project by Vibhor Shrivastava."],
       [/^(what is your name|who are you|introduce yourself)\b/, "I'm VOXORA, a personal AI assistant designed to help with questions, learning, ideas, and everyday problem-solving."],
       [/^(what is voxora|tell me about voxora)\b/, "VOXORA is a personal AI assistant website. It uses a Gemini model through a private backend and keeps chat history locally in this browser."],
