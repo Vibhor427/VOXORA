@@ -1,13 +1,10 @@
 
  document.addEventListener("DOMContentLoaded", () => {
   "use strict";
+  // Gemini requests go through the Cloudflare Worker; no API key is stored in this file.
+  const BACKEND_ENDPOINT = "https://voxora-backend.vibhu-shrivastava24.workers.dev";
 
-  // Add your NEW Gemini API key here. Never publish this frontend version publicly:
-  // browser JavaScript cannot keep an API key secret. Use a backend proxy for deployment.
-  const GEMINI_API_KEY = "AQ.Ab8RN6LoNCdxeuGjogaXG3dp70GamZ7MpzQuGesUm-PcsFQPCA";
-  const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent";
-
-  const STORAGE_KEY = "smart_ai_conversations_v2"; // Keeps your existing saved chats.
+const STORAGE_KEY = "smart_ai_conversations_v2"; // Keeps your existing saved chats.
   const THEME_KEY = "voxora_theme_v1";
   const SETTINGS_KEY = "voxora_settings_v1";
   const $ = id => document.getElementById(id);
@@ -416,11 +413,7 @@
   questionInput.addEventListener("input", resizeTextarea);
 
   async function fetchAnswerFromGemini(messages) {
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === "PASTE_YOUR_NEW_GEMINI_API_KEY_HERE") {
-      throw new Error("Add your new Gemini API key near the top of scripts.js.");
-    }
-
-    // Send the conversation, not just the latest question, so follow-up questions have context.
+// Send the conversation, not just the latest question, so follow-up questions have context.
     const contents = messages
       .filter(message => (message.role === "user" || message.role === "assistant") && typeof message.text === "string")
       .map(message => ({
@@ -435,8 +428,7 @@
     const requestOptions = {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": GEMINI_API_KEY
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         contents,
@@ -447,7 +439,7 @@
     let lastError;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const response = await fetch(GEMINI_ENDPOINT, requestOptions);
+        const response = await fetch(BACKEND_ENDPOINT, requestOptions);
         const data = await response.json().catch(() => ({}));
         if (response.ok) {
           const answer = data.candidates?.[0]?.content?.parts
