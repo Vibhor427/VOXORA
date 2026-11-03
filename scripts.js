@@ -7,6 +7,8 @@
 const STORAGE_KEY = "smart_ai_conversations_v2"; // Keeps your existing saved chats.
   const THEME_KEY = "voxora_theme_v1";
   const SETTINGS_KEY = "voxora_settings_v1";
+  const PROFILE_NAME_KEY = "voxora_profile_name_v1";
+  const QUOTE_KEY = "voxora_sidebar_quote_v1";
   const $ = id => document.getElementById(id);
 
   const questionInput = $("question");
@@ -41,6 +43,7 @@ const STORAGE_KEY = "smart_ai_conversations_v2"; // Keeps your existing saved ch
   let speechUtterance = null;
   let themeMode = localStorage.getItem(THEME_KEY) || "system";
   let settings = loadSettings();
+  let profileName = (localStorage.getItem(PROFILE_NAME_KEY) || "").trim();
 
   function loadSettings() {
     try {
@@ -154,6 +157,8 @@ const STORAGE_KEY = "smart_ai_conversations_v2"; // Keeps your existing saved ch
       return;
     }
     [...conversations].sort((a, b) => b.updatedAt - a.updatedAt).forEach(conversation => {
+      const entry = document.createElement("div");
+      entry.className = "history-entry";
       const button = document.createElement("button");
       button.className = "history-item";
       button.type = "button";
@@ -163,7 +168,25 @@ const STORAGE_KEY = "smart_ai_conversations_v2"; // Keeps your existing saved ch
       const title = document.createElement("span");
       title.textContent = conversation.title || "Conversation";
       button.append(icon, title);
+      let holdTimer = null;
+      let holdTriggered = false;
+      const clearHold = () => { if (holdTimer) clearTimeout(holdTimer); holdTimer = null; };
+      button.addEventListener("pointerdown", () => {
+        if (isLoading) return;
+        holdTriggered = false;
+        clearHold();
+        holdTimer = setTimeout(() => {
+          holdTriggered = true;
+          showConversationDeleteConfirmation(entry, conversation);
+        }, 600);
+      });
+      ["pointerup", "pointerleave", "pointercancel"].forEach(type => button.addEventListener(type, clearHold));
+      button.addEventListener("contextmenu", event => {
+        event.preventDefault();
+        if (!isLoading) { holdTriggered = true; showConversationDeleteConfirmation(entry, conversation); }
+      });
       button.addEventListener("click", () => {
+        if (holdTriggered) { holdTriggered = false; return; }
         if (isLoading) return;
         stopSpeech();
         activeConversationId = conversation.id;
@@ -171,8 +194,41 @@ const STORAGE_KEY = "smart_ai_conversations_v2"; // Keeps your existing saved ch
         renderMessages();
         closeMobileSidebar();
       });
-      historyElement.appendChild(button);
+      entry.appendChild(button);
+      historyElement.appendChild(entry);
     });
+  }
+
+  function showConversationDeleteConfirmation(entry, conversation) {
+    if (entry.querySelector(".history-delete-confirmation")) return;
+    const confirmation = document.createElement("div");
+    confirmation.className = "history-delete-confirmation";
+    const prompt = document.createElement("span");
+    prompt.textContent = "Delete this conversation?";
+    const actions = document.createElement("div");
+    actions.className = "history-delete-actions";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "history-delete-cancel";
+    cancel.textContent = "Cancel";
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "history-delete-confirm";
+    remove.textContent = "Delete";
+    cancel.addEventListener("click", () => confirmation.remove());
+    remove.addEventListener("click", () => {
+      if (activeConversationId === conversation.id) {
+        stopSpeech();
+        activeConversationId = null;
+        renderMessages();
+      }
+      conversations = conversations.filter(item => item.id !== conversation.id);
+      saveConversations();
+      renderHistory();
+    });
+    actions.append(cancel, remove);
+    confirmation.append(prompt, actions);
+    entry.appendChild(confirmation);
   }
 
   function createWelcomeScreen() {
@@ -310,13 +366,13 @@ const STORAGE_KEY = "smart_ai_conversations_v2"; // Keeps your existing saved ch
 
     const avatar = document.createElement("div");
     avatar.className = "message-avatar";
-    avatar.textContent = isUser ? "V" : "✳";
+    avatar.textContent = isUser ? (profileName.charAt(0).toUpperCase() || "V") : "✳";
 
     const content = document.createElement("div");
     content.className = "message-content";
     const label = document.createElement("div");
     label.className = "message-label";
-    label.textContent = isUser ? "You" : "Voxora";
+    label.textContent = isUser ? (profileName || "You") : "Voxora";
 
     const messageText = document.createElement("div");
     messageText.className = "message-text";
@@ -495,11 +551,45 @@ const STORAGE_KEY = "smart_ai_conversations_v2"; // Keeps your existing saved ch
     await generateAssistantAnswer(conversation);
   }
 
+  function getLocalAnswer(question) {
+    const q = String(question || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+    const answers = [
+      [/^(who made you|who created you|who is your creator|who built you)\b/, "I was created for the VOXORA project by Vibhor Shrivastava."],
+      [/^(what is your name|who are you|introduce yourself)\b/, "I'm VOXORA, a personal AI assistant designed to help with questions, learning, ideas, and everyday problem-solving."],
+      [/^(what is voxora|tell me about voxora)\b/, "VOXORA is a personal AI assistant website. It uses a Gemini model through a private backend and keeps chat history locally in this browser."],
+      [/^(what can you do|your capabilities|what are your capabilities)\b/, "I can explain concepts, help with writing, brainstorm ideas, answer questions, assist with coding, and support learning. General questions use Gemini; a few basic questions are answered locally."],
+      [/^(are you human|are you a person)\b/, "No. I'm an AI assistant, not a human."],
+      [/^(are you free|does voxora cost money|is voxora free)\b/, "The current VOXORA version is designed to use available free-tier services, but those services can have usage limits and their terms may change."],
+      [/^(do you remember me|do you have memory)\b/, "VOXORA stores conversation history in this browser's local storage. It does not provide shared cloud memory across devices."],
+      [/^(where are my chats stored|where is chat history stored|do you store my chats)\b/, "Saved chats are stored locally in this browser on this device. Clearing browser site data can remove them, and they do not automatically sync to another device."],
+      [/^(can i use you offline|do you work offline)\b/, "The local interface and saved chats can open offline, but Gemini-powered answers need an internet connection."],
+      [/^(do you support voice|can you speak|how does voice work)\b/, "VOXORA uses your browser's built-in speech synthesis for spoken replies. Voice availability and choices depend on your browser and device."],
+      [/^(can i change your voice|how do i change voice)\b/, "Open Settings and choose an available voice. You can also adjust speech rate and automatic speaking."],
+      [/^(how do i change theme|can i change theme|dark mode)\b/, "Use the theme control in the top bar or choose System, Light, or Dark in Settings."],
+      [/^(what model do you use|which ai model|which model powers you)\b/, "VOXORA sends requests to the Gemini model configured in its Cloudflare Worker backend."],
+      [/^(can you browse the internet|do you have internet access)\b/, "This version does not have a dedicated live web-search feature."],
+      [/^(can you help with maths|do you know maths|math help)\b/, "Yes. I can explain mathematical ideas, show worked examples, and help check calculations."],
+      [/^(can you help with science|science help)\b/, "Yes. I can explain physics, chemistry, biology, and other science topics step by step."],
+      [/^(can you help me study|help me study|study help)\b/, "Yes. I can explain topics, make revision plans, create practice questions, and help review your answers."],
+      [/^(can you write code|coding help|can you program)\b/, "Yes. I can explain code, help debug errors, and write examples in common programming languages."],
+      [/^(what languages do you know|which languages can you use)\b/, "I can work with many languages, including English and Hindi, though accuracy can vary by language and task."],
+      [/^(can you generate images|do you make images)\b/, "This version of VOXORA is currently a text-chat assistant and does not include image generation."],
+      [/^(can you read files|can i upload files)\b/, "File upload and document reading are not currently built into this version of VOXORA."],
+      [/^(is my api key safe|where is the api key|is the key public)\b/, "The Gemini key is stored as a Secret in the Cloudflare Worker, not in the public website code. Never share it or commit it to GitHub."],
+      [/^(does voxora sync|can i use chats on another device)\b/, "Not currently. Chats are stored separately in each browser's local storage; cloud sync and accounts are future features."],
+      [/^(what are your limitations|what can t you do|your limitations)\b/, "I can make mistakes, may not know current information, and cannot access private files or accounts unless a feature explicitly connects them. Verify important information independently."]
+    ];
+    const match = answers.find(([pattern]) => pattern.test(q));
+    return match ? match[1] : null;
+  }
+
   async function generateAssistantAnswer(conversation) {
     setLoading(true);
     if (!$("typing-message")) showTyping();
     try {
-      const answer = await fetchAnswerFromGemini(conversation.messages);
+      const latestUserMessage = [...conversation.messages].reverse().find(item => item.role === "user");
+      const localAnswer = latestUserMessage ? getLocalAnswer(latestUserMessage.text) : null;
+      const answer = localAnswer || await fetchAnswerFromGemini(conversation.messages);
       removeTyping();
       conversation.messages.push({ role: "assistant", text: answer });
       conversation.updatedAt = Date.now();
@@ -787,8 +877,91 @@ const STORAGE_KEY = "smart_ai_conversations_v2"; // Keeps your existing saved ch
     }
   });
 
+  const sidebarQuotes = [
+    "A thoughtful space for curious minds.",
+    "Stay curious. Keep asking better questions.",
+    "Small questions can lead to big discoveries.",
+    "Make room for ideas that challenge you.",
+    "Learn deeply. Think independently.",
+    "Every expert was once a beginner.",
+    "Curiosity turns uncertainty into discovery.",
+    "Good questions are the start of progress.",
+    "Explore widely. Understand carefully.",
+    "One idea can change how you see everything.",
+    "Think clearly. Create boldly.",
+    "Keep learning beyond the obvious."
+  ];
+
+  function applyProfileName() {
+    const avatar = document.querySelector(".profile-avatar");
+    const name = document.querySelector(".profile-info strong");
+    if (avatar) avatar.textContent = profileName.charAt(0).toUpperCase() || "V";
+    if (name) {
+      name.textContent = profileName || "Your workspace";
+      name.title = "Click to change your name";
+      name.style.cursor = "pointer";
+      name.onclick = changeProfileName;
+    }
+  }
+
+  function changeProfileName() {
+    const next = window.prompt("What name should VOXORA use?", profileName);
+    if (next === null) return;
+    const clean = next.trim().slice(0, 32);
+    if (!clean) { window.alert("Please enter a name."); return; }
+    profileName = clean;
+    localStorage.setItem(PROFILE_NAME_KEY, profileName);
+    applyProfileName();
+    renderMessages();
+  }
+
+  function showNameSetup() {
+    const overlay = document.createElement("div");
+    overlay.className = "name-setup-overlay";
+    const panel = document.createElement("form");
+    panel.className = "name-setup-card";
+    const mark = document.createElement("div");
+    mark.className = "name-setup-mark";
+    mark.textContent = "✳";
+    const heading = document.createElement("h2");
+    heading.textContent = "Welcome to VOXORA";
+    const description = document.createElement("p");
+    description.textContent = "What should I call you?";
+    const input = document.createElement("input");
+    input.type = "text"; input.maxLength = 32; input.autocomplete = "given-name";
+    input.placeholder = "Your name"; input.required = true;
+    const submit = document.createElement("button");
+    submit.type = "submit"; submit.textContent = "Continue";
+    panel.append(mark, heading, description, input, submit);
+    panel.addEventListener("submit", event => {
+      event.preventDefault();
+      const clean = input.value.trim().slice(0, 32);
+      if (!clean) return;
+      profileName = clean;
+      localStorage.setItem(PROFILE_NAME_KEY, profileName);
+      applyProfileName();
+      overlay.remove();
+    });
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+    input.focus();
+  }
+
+  function rotateSidebarQuote() {
+    const quote = document.querySelector(".sidebar-note span:last-child");
+    if (!quote) return;
+    const previous = Number(localStorage.getItem(QUOTE_KEY));
+    let next = Math.floor(Math.random() * sidebarQuotes.length);
+    if (sidebarQuotes.length > 1 && next === previous) next = (next + 1) % sidebarQuotes.length;
+    localStorage.setItem(QUOTE_KEY, String(next));
+    quote.textContent = sidebarQuotes[next];
+  }
+
   // Initial setup
   applyTheme(["system", "light", "dark"].includes(themeMode) ? themeMode : "system");
+  applyProfileName();
+  rotateSidebarQuote();
+  if (!profileName) showNameSetup();
   renderHistory();
   renderMessages();
   resizeTextarea();
